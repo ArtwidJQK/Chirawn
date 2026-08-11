@@ -46,20 +46,20 @@ _Avoid_: account, user account
 ## Current Work / Handoff
 
 **Current phase**: Foundation assessment and workflow integration.  
-**Active task**: Establish cross-agent project continuity and a canonical project context.  
+**Active task**: Establish cross-agent project continuity and confirm next task with Art.  
 **Completed**:
-- Reviewed the GitHub repository and its two commits.
-- Confirmed the base application and the Matt Pocock skill library are present.
-- Added this context and agent workflow contract.
+- Synced canonical `AGENTS.md` and `CONTEXT.md` from `origin/main`.
+- Added Gradle wrapper (`gradlew`, `gradlew.bat`, `gradle/wrapper/*`) to enable standalone builds.
+- Inspected all Kotlin source code files (`MainActivity.kt`, `ChirawnApp.kt`, `AppDatabase.kt`, `GameViewModels.kt`, `build.gradle.kts`).
 
 **Verification**:
-- Repository files were inspected through the connected GitHub integration.
-- No local Gradle build was run: the temporary local clone could not authenticate in this environment.
+- Verified `git status` and `git log` synchronization with remote `origin/main`.
+- Verified full contents of `AGENTS.md` and `CONTEXT.md` as source of truth.
 
 **Known gaps**:
-- No documented build/test baseline yet.
-- No roadmap, ADRs, approved feature specs, or known-issues/technical-debt record yet.
-- The installed skills did not previously have their expected `docs/agents/` configuration.
-- No open GitHub issues or pull requests at the time of review.
+- Local Gradle build/test execution baseline not yet run in this environment.
+- `ChirawnApp.kt` contains all UI views in a single compressed file.
+- Home screen "Chuỗi hiện tại" and Profile screen time/achievement stats currently show placeholders (`"—"`).
 
-**Recommended next action**: Run a narrow build-and-test baseline in Android Studio or a checkout with working Gradle credentials, then record only verified results here.
+**Recommended next action**: Await Art's selection and confirmation of the next active task before initiating code edits.
+
