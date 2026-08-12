@@ -26,6 +26,12 @@ _Avoid_: leaderboard
 **Profile**: The locally stored personal identity surface, currently containing the nickname.  
 _Avoid_: account, user account
 
+**Streak**: The number of consecutive days Ngọc Anh completes at least one game session.
+
+**Streak Recovery**: A 48-hour window after a streak is broken where it can be restored. If not restored within 2 days, the streak is lost permanently.
+
+**Artwid**: The digital companion and supporter within Chirawn, representing Art (the creator). Artwid provides greetings, encouragement, and manages the Streak Recovery offers.
+
 ## Architecture Snapshot
 
 - Android, Kotlin, Jetpack Compose, Material 3 foundation.
@@ -46,19 +52,23 @@ _Avoid_: account, user account
 ## Current Work / Handoff
 
 **Current phase**: Foundation build stabilization.  
-**Active task**: Foundation baseline verification.  
+**Active task**: Foundation baseline verification & Architecture reinforcement.  
 **Completed**:
 - Synced canonical `AGENTS.md` and `CONTEXT.md` from `origin/main`.
 - Added Gradle wrapper to enable standalone builds.
-- Updated `app/build.gradle.kts` to align Java and Kotlin compilation on JVM 17.
-- Reformatted `ChirawnApp.kt` for standard Kotlin/Compose style and fixed build errors (missing `rememberSaveable` import, API level issue with `removeLast`).
-- Migrated deprecated icons in `ChirawnApp.kt`.
+- Updated `app/build.gradle.kts` to align Java and Kotlin compilation on JVM 17 and added unit test support.
+- Reformatted `ChirawnApp.kt` for standard Kotlin/Compose style and fixed build errors.
+- Extracted game logic for Sudoku, 2048, and Sliding Puzzle into dedicated "Deep Engine" classes (`SudokuEngine`, `Game2048Engine`, `SlidingEngine`).
+- Implemented full unit test suite for game engines using TDD.
+- Recorded architecture decisions in `docs/adr/0001` and `0002`.
 
 **Verification**:
 - `assembleDebug` finished successfully.
-- `ChirawnApp.kt` analyzed with no errors or warnings.
+- `app:testDebugUnitTest` passed with 17 tests across all 3 game engines.
+- `ChirawnApp.kt` and `GameViewModels.kt` analyzed with no errors.
 
 **Known gaps**:
 - Home screen `Chuỗi hiện tại` and Profile screen time/achievement stats currently show placeholders (`"—"`).
+- UI remains concentrated in `ChirawnApp.kt`.
 
 **Recommended next action**: Run the app on an emulator/device to verify runtime behavior and UI after the reformatting and stabilization.
