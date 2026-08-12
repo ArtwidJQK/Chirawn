@@ -16,6 +16,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -66,17 +73,55 @@ fun ChirawnApp(repo: HubRepository) {
 private fun Shell(title: String, content: @Composable ColumnScope.() -> Unit) = Scaffold(
     topBar = {
         CenterAlignedTopAppBar(
-            title = { Text(title, fontWeight = FontWeight.Bold) }
+            title = {
+                Text(
+                    title,
+                    fontWeight = FontWeight.ExtraBold,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            },
+            colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                containerColor = Color.Transparent
+            )
         )
     }
 ) { p ->
     Column(
         Modifier
             .padding(p)
-            .padding(horizontal = 20.dp)
+            .padding(horizontal = 24.dp)
             .fillMaxSize(),
         content = content
     )
+}
+
+@Composable
+private fun AvatarImage(resId: Int, size: androidx.compose.ui.unit.Dp, modifier: Modifier = Modifier) {
+    val painter = if (resId != 0) painterResource(resId) else null
+    Box(
+        modifier
+            .size(size)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.primaryContainer),
+        contentAlignment = Alignment.Center
+    ) {
+        if (painter != null) {
+            Image(
+                painter = painter,
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            Icon(
+                Icons.Default.Person,
+                null,
+                Modifier.size(size * 0.6f),
+                tint = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+        }
+    }
 }
 
 @Composable
@@ -84,19 +129,71 @@ private fun Home(repo: HubRepository, games: () -> Unit, profile: () -> Unit) {
     val p by repo.profile.collectAsStateWithLifecycle(null)
     val total by repo.total.collectAsStateWithLifecycle(0)
     val recent by repo.recent.collectAsStateWithLifecycle(emptyList())
+    val scope = rememberCoroutineScope()
+    val streakEngine = remember { StreakEngine() }
+
     val greeting = when (Calendar.getInstance().get(Calendar.HOUR_OF_DAY)) {
         in 5..11 -> "Chào buổi sáng"
         in 12..17 -> "Chào buổi chiều"
         else -> "Chào buổi tối"
     }
+
     Shell("Chirawn") {
         Spacer(Modifier.height(12.dp))
-        Text(greeting, style = MaterialTheme.typography.titleLarge)
-        Text(
-            p?.nickname ?: "Bạn",
-            style = MaterialTheme.typography.displaySmall,
-            fontWeight = FontWeight.Bold
-        )
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(greeting, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    p?.nickname ?: "Bạn",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.ExtraBold
+                )
+            }
+            AvatarImage(
+                resId = p?.avatarRes ?: 0,
+                size = 56.dp,
+                modifier = Modifier.clickable(onClick = profile)
+            )
+        }
+        
+        // Artwid Supporter Area
+        Spacer(Modifier.height(16.dp))
+        val brokenDate = p?.streakBrokenDate
+        val canRecover = remember(brokenDate) { streakEngine.canRecover(brokenDate) }
+        
+        Surface(
+            Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f)
+        ) {
+            Column(Modifier.padding(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.AutoAwesome, "Artwid", tint = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Artwid", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                }
+                Spacer(Modifier.height(4.dp))
+                if (canRecover && p != null && p!!.previousStreak > 0) {
+                    Text("Ơ kìa, chuỗi ${p!!.previousStreak} ngày của mình bị đứt rồi. Bạn có muốn Artwid khôi phục lại không?")
+                    TextButton(onClick = { scope.launch { repo.restoreStreak() } }) {
+                        Text("Khôi phục ngay")
+                    }
+                } else {
+                    val currentStr = p?.currentStreak ?: 0
+                    val artwidMsg = when {
+                        currentStr >= 7 -> "Tuyệt vời! Bạn đang có chuỗi $currentStr ngày rồi đó. Cứ tiếp tục nhé!"
+                        currentStr >= 1 -> "Chào mừng bạn quay lại. Hãy hoàn thành một ván game để duy trì chuỗi nhé."
+                        else -> "Hôm nay là một ngày đẹp trời để bắt đầu điều gì đó mới mẻ."
+                    }
+                    Text(artwidMsg, style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+        }
+
         Spacer(Modifier.height(24.dp))
         ElevatedCard(
             Modifier
@@ -120,7 +217,7 @@ private fun Home(repo: HubRepository, games: () -> Unit, profile: () -> Unit) {
         Spacer(Modifier.height(18.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Stat("Đã chơi", total.toString(), Modifier.weight(1f))
-            Stat("Chuỗi hiện tại", "—", Modifier.weight(1f))
+            Stat("Chuỗi hiện tại", (p?.currentStreak ?: 0).toString(), Modifier.weight(1f))
         }
         Spacer(Modifier.height(22.dp))
         Text("Hoạt động gần đây", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
@@ -222,46 +319,74 @@ private fun GameCard(name: String, desc: String, best: String?, play: () -> Unit
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun Profile(repo: HubRepository) {
     val p by repo.profile.collectAsStateWithLifecycle(null)
     val total by repo.total.collectAsStateWithLifecycle(0)
     val scope = rememberCoroutineScope()
     var name by remember(p) { mutableStateOf(p?.nickname ?: "Bạn") }
+
+    val avatars = listOf(
+        R.drawable.avt1,
+        R.drawable.avt2,
+        R.drawable.avt3
+    )
+
     Shell("Hồ sơ") {
         Spacer(Modifier.height(20.dp))
-        Box(
-            Modifier
-                .size(84.dp)
-                .clip(RoundedCornerShape(42.dp))
-                .background(MaterialTheme.colorScheme.primaryContainer),
-            contentAlignment = Alignment.Center
+        
+        // Avatar Selection
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Default.Person, null, Modifier.size(44.dp))
+            avatars.forEach { resId ->
+                val isSelected = p?.avatarRes == resId
+                Box(
+                    Modifier
+                        .padding(8.dp)
+                        .size(72.dp)
+                        .clip(CircleShape)
+                        .border(
+                            width = if (isSelected) 3.dp else 0.dp,
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                            shape = CircleShape
+                        )
+                        .clickable { scope.launch { repo.updateAvatar(resId) } }
+                ) {
+                    AvatarImage(resId, 72.dp)
+                }
+            }
         }
-        Spacer(Modifier.height(18.dp))
+
+        Spacer(Modifier.height(24.dp))
         OutlinedTextField(
             value = name,
             onValueChange = { name = it },
             label = { Text("Biệt danh") },
             singleLine = true,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp)
         )
         Button(
             onClick = { scope.launch { repo.nickname(name) } },
-            modifier = Modifier.padding(top = 10.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp),
+            shape = RoundedCornerShape(16.dp)
         ) {
-            Text("Lưu")
+            Text("Lưu biệt danh")
         }
-        Spacer(Modifier.height(26.dp))
+        
+        Spacer(Modifier.height(32.dp))
+        Text("Thống kê của bạn", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(12.dp))
         Stat("Tổng số ván", total.toString(), Modifier.fillMaxWidth())
         Spacer(Modifier.height(12.dp))
         Text("Tổng thời gian chơi —", style = MaterialTheme.typography.bodyLarge)
-        Text(
-            "Thành tựu hay nhất —",
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.padding(top = 10.dp)
-        )
+        Text("Thành tựu hay nhất —", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 10.dp))
     }
 }
 
