@@ -45,21 +45,23 @@ _Avoid_: account, user account
 
 ## Current Work / Handoff
 
-**Current phase**: Foundation assessment and workflow integration.  
-**Active task**: Establish cross-agent project continuity and confirm next task with Art.  
+**Current phase**: Foundation build stabilization.  
+**Active task**: Resolve the failed Android debug build before adding new product features.  
 **Completed**:
 - Synced canonical `AGENTS.md` and `CONTEXT.md` from `origin/main`.
 - Added Gradle wrapper (`gradlew`, `gradlew.bat`, `gradle/wrapper/*`) to enable standalone builds.
-- Inspected all Kotlin source code files (`MainActivity.kt`, `ChirawnApp.kt`, `AppDatabase.kt`, `GameViewModels.kt`, `build.gradle.kts`).
+- Inspected all Kotlin source code files and current Gradle configuration.
+- Diagnosed `:app:kaptGenerateStubsDebugKotlin`: Java tasks targeted JVM 11 while Kotlin, under JDK 25, selected JVM target 24.
+- Updated `app/build.gradle.kts` to align Java and Kotlin compilation on JVM 17.
 
 **Verification**:
-- Verified `git status` and `git log` synchronization with remote `origin/main`.
-- Verified full contents of `AGENTS.md` and `CONTEXT.md` as source of truth.
+- Root cause confirmed from Android Studio's complete Gradle error.
+- Configuration fix committed as `946272cff1d5f686281686e27ac907b98fea5014`.
+- `assembleDebug` has not yet been rerun after the fix; build status is therefore still unverified.
 
 **Known gaps**:
-- Local Gradle build/test execution baseline not yet run in this environment.
+- Local Gradle build/test execution baseline not yet verified after the JVM-target fix.
 - `ChirawnApp.kt` contains all UI views in a single compressed file.
-- Home screen "Chuỗi hiện tại" and Profile screen time/achievement stats currently show placeholders (`"—"`).
+- Home screen `Chuỗi hiện tại` and Profile screen time/achievement stats currently show placeholders (`"—"`).
 
-**Recommended next action**: Await Art's selection and confirmation of the next active task before initiating code edits.
-
+**Recommended next action**: In Android Studio, sync Gradle and run `assembleDebug` or Run on the Pixel 6 emulator. Send the full result; only after a successful baseline should we plan the next feature.
